@@ -1,0 +1,5 @@
+# Cloudflare Functions 环境变量 (本地开发)
+# 复制此文件为 .dev.vars 并填入实际值
+
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret

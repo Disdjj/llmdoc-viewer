@@ -1,0 +1,7 @@
+name = "llmdoc-viewer"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[vars]
+# GITHUB_CLIENT_ID 通过环境变量配置
+# GITHUB_CLIENT_SECRET 通过 Cloudflare Dashboard 配置 (Secret)
