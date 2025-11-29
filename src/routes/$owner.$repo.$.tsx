@@ -166,7 +166,7 @@ function RepoViewer() {
   const currentFileName = selectedFile?.split("/").pop() || _splat?.split("/").pop() || ""
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-4 animate-fade-in">
+    <div className="h-full flex flex-col gap-3 animate-fade-in">
       {/* 顶部工具栏 */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-4">
@@ -274,7 +274,7 @@ function RepoViewer() {
 
           {/* 内容区域 */}
           <ScrollArea className="flex-1 bg-background/50">
-            <div className="p-6 md:p-10 max-w-5xl mx-auto min-h-[500px]">
+            <div className="p-6 md:p-10 max-w-5xl mx-auto">
               {isLoadingFile ? (
                 <ContentSkeleton />
               ) : fileContent ? (
@@ -327,7 +327,7 @@ function TabButton({
 
 function LoadingSkeleton() {
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
+    <div className="h-full flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
         <Skeleton className="h-6 w-32" />
         <div className="flex gap-2">
