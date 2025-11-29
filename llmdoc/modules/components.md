@@ -35,7 +35,13 @@
 ```
 
 ### FileTree
-递归渲染文件树
+递归渲染文件树，自动移除文件名后的 `.md` 后缀显示
+
+**主要功能：**
+- 递归渲染树结构中的文件和文件夹
+- 通过 `getDisplayName` 函数移除 `.md` 后缀（如 `index.md` 显示为 `index`）
+- 支持文件选中状态高亮显示
+- 文件夹显示为分类标签，文件以列表形式显示
 
 ```tsx
 <FileTree
@@ -44,6 +50,8 @@
   onSelect={(path, sha) => selectFile(path, sha)}
 />
 ```
+
+源码位置：`src/components/FileTree.tsx:34-38` (getDisplayName 函数)
 
 ### MarkdownView
 Markdown 渲染器，支持 GFM 和代码高亮
