@@ -80,12 +80,6 @@ export function useRepo({ owner, repo, token }: UseRepoOptions): UseRepoReturn {
           tabs: filtered,
         })
         setTree(treeStructure)
-
-        // 默认选中 claude.md
-        if (filtered.claudeMd) {
-          setSelectedFile(filtered.claudeMd.path)
-          setSelectedSha(filtered.claudeMd.sha)
-        }
       } catch (error) {
         if (cancelled) return
 

@@ -1,5 +1,3 @@
-import { useState } from "react"
-import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { TreeNode } from "@/types"
 
@@ -11,7 +9,7 @@ interface FileTreeProps {
 
 export function FileTree({ nodes, selectedPath, onSelect }: FileTreeProps) {
   return (
-    <div className="text-sm">
+    <div className="text-sm space-y-1">
       {nodes.map((node) => (
         <FileTreeNode
           key={node.path}
@@ -33,69 +31,48 @@ interface FileTreeNodeProps {
 }
 
 function FileTreeNode({ node, selectedPath, onSelect, level }: FileTreeNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(level === 0)
   const isFolder = node.type === "folder"
   const isSelected = selectedPath === node.path
-  const isMarkdown = node.name.endsWith(".md")
+  
+  // Use the file name as display name, stripping extension for cleaner look?
+  // User didn't ask, but "Documentation system" usually has clean names.
+  // Let's keep extension for now to be safe, or user might get confused.
+  const displayName = node.name
 
-  const handleClick = () => {
-    if (isFolder) {
-      setIsExpanded(!isExpanded)
-    } else {
-      onSelect(node.path, node.sha)
-    }
+  if (isFolder) {
+    return (
+      <div className="pt-2 first:pt-0">
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+          {displayName}
+        </div>
+        {node.children && (
+          <div className="ml-2 pl-1 border-l border-border/30 space-y-0.5">
+            {node.children.map((child) => (
+              <FileTreeNode
+                key={child.path}
+                node={child}
+                selectedPath={selectedPath}
+                onSelect={onSelect}
+                level={level + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div>
-      <div
-        className={cn(
-          "flex items-center gap-1 py-1 px-2 rounded cursor-pointer hover:bg-accent transition-colors",
-          isSelected && "bg-accent"
-        )}
-        style={{ paddingLeft: `${level * 12 + 8}px` }}
-        onClick={handleClick}
-      >
-        {isFolder ? (
-          <>
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            )}
-            {isExpanded ? (
-              <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
-            ) : (
-              <Folder className="h-4 w-4 shrink-0 text-blue-500" />
-            )}
-          </>
-        ) : (
-          <>
-            <span className="w-4" />
-            <File
-              className={cn(
-                "h-4 w-4 shrink-0",
-                isMarkdown ? "text-green-500" : "text-muted-foreground"
-              )}
-            />
-          </>
-        )}
-        <span className="truncate">{node.name}</span>
-      </div>
-
-      {isFolder && isExpanded && node.children && (
-        <div>
-          {node.children.map((child) => (
-            <FileTreeNode
-              key={child.path}
-              node={child}
-              selectedPath={selectedPath}
-              onSelect={onSelect}
-              level={level + 1}
-            />
-          ))}
-        </div>
+    <div
+      className={cn(
+        "group flex items-center gap-2 py-1.5 px-3 rounded-md cursor-pointer transition-all duration-200",
+        isSelected 
+          ? "bg-primary/10 text-primary font-medium" 
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
       )}
+      onClick={() => onSelect(node.path, node.sha)}
+    >
+      <span className="truncate">{displayName}</span>
     </div>
   )
 }

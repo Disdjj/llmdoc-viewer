@@ -126,7 +126,28 @@ export function buildTreeStructure(nodes: GitNode[]): TreeNode[] {
     }
   }
 
-  return root
+  // Helper to sort nodes recursively
+  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+    return nodes.sort((a, b) => {
+      if (a.name.toLowerCase() === "index.md") return -1
+      if (b.name.toLowerCase() === "index.md") return 1
+      
+      // Folders first? Let's keep files and folders mixed or folders first.
+      // Standard: Folders first, then files.
+      if (a.type !== b.type) {
+          return a.type === "folder" ? -1 : 1
+      }
+      
+      return a.name.localeCompare(b.name)
+    }).map(node => {
+      if (node.children) {
+        node.children = sortNodes(node.children)
+      }
+      return node
+    })
+  }
+
+  return sortNodes(root)
 }
 
 export async function fetchFileContent(

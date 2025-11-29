@@ -1,5 +1,6 @@
 import { Github, LogOut, FileText } from "lucide-react"
 import { Button } from "./ui/button"
+import { ThemeToggle } from "./ThemeToggle"
 import type { GitHubUser } from "@/types"
 
 interface HeaderProps {
@@ -46,6 +47,7 @@ export function Header({ owner, repo, user, onLogin, onLogout }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
+            <ThemeToggle />
             {owner && repo && (
                 <a
                     href={`https://github.com/${owner}/${repo}`}

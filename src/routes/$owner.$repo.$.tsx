@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { createRoute } from "@tanstack/react-router"
+import { useState, useEffect } from "react"
+import { createRoute, useNavigate } from "@tanstack/react-router"
 import { Loader2, FileText, FolderOpen, ChevronLeft, ExternalLink, Copy, Check } from "lucide-react"
 import { useAuth } from "../hooks/useAuth"
 import { useRepo } from "../hooks/useRepo"
@@ -10,15 +10,17 @@ import { ScrollArea } from "../components/ui/scroll-area"
 import { Skeleton } from "../components/ui/skeleton"
 import { Button } from "../components/ui/button"
 import { Route as RootRoute } from "./__root"
+import type { GitNode } from "../types"
 
 export const Route = createRoute({
   getParentRoute: () => RootRoute,
-  path: "/$owner/$repo",
+  path: "/$owner/$repo/$",
   component: RepoViewer,
 })
 
 function RepoViewer() {
-  const { owner, repo } = Route.useParams()
+  const { owner, repo, _splat } = Route.useParams()
+  const navigate = useNavigate({ from: Route.fullPath })
   const { token, login } = useAuth()
   const {
     isLoading,
@@ -32,18 +34,99 @@ function RepoViewer() {
     selectFile,
   } = useRepo({ owner, repo, token })
 
-  const [activeTab, setActiveTab] = useState<"claude" | "agents" | "docs">("claude")
+  const [activeTab, setActiveTab] = useState<"claude" | "agents" | "docs">("docs") // Default to docs
   const [copied, setCopied] = useState(false)
 
-  // 处理标签切换
+  // Sync URL with State
+  useEffect(() => {
+    if (isLoading || !hasContent) return
+
+    // If no splat is provided (root of repo), redirect to default
+    if (!_splat) {
+      // Priority: llmdoc/index.md -> claude.md -> agents.md -> first doc
+      let targetPath = ""
+      
+      // Check for llmdoc/index.md in tree
+      // We need to search recursively or just check known paths if possible
+      // Since tree is hierarchical, it's harder to search. 
+      // But we have tabs.docsTree which is flat list of GitNodes!
+      const indexMd = tabs.docsTree.find(n => n.path.toLowerCase() === "llmdoc/index.md")
+      
+      if (indexMd) {
+        targetPath = indexMd.path
+      } else if (tabs.claudeMd) {
+        targetPath = tabs.claudeMd.path
+      } else if (tabs.agentsMd) {
+        targetPath = tabs.agentsMd.path
+      } else if (tabs.docsTree.length > 0) {
+        targetPath = tabs.docsTree[0].path
+      }
+
+      if (targetPath) {
+        navigate({ to: `/${owner}/${repo}/${targetPath}`, replace: true })
+      }
+      return
+    }
+
+    // If splat exists, find the file and select it
+    // Determine which tab this file belongs to
+    let foundNode: GitNode | undefined
+    let newTab: "claude" | "agents" | "docs" = "docs"
+
+    if (tabs.claudeMd && tabs.claudeMd.path === _splat) {
+      foundNode = tabs.claudeMd
+      newTab = "claude"
+    } else if (tabs.agentsMd && tabs.agentsMd.path === _splat) {
+      foundNode = tabs.agentsMd
+      newTab = "agents"
+    } else {
+      foundNode = tabs.docsTree.find(n => n.path === _splat)
+      newTab = "docs"
+    }
+
+    if (foundNode) {
+      if (selectedFile !== foundNode.path) {
+        selectFile(foundNode.path, foundNode.sha)
+      }
+      if (activeTab !== newTab) {
+        setActiveTab(newTab)
+      }
+    } else {
+       // File not found in our tree, maybe 404 or just invalid URL
+       // For now, we can just do nothing or show error.
+       // But selectFile requires SHA. If we don't have it, we can't load.
+    }
+
+  }, [_splat, isLoading, hasContent, tabs, owner, repo, navigate, selectFile, selectedFile, activeTab])
+
+
+  // Handle user interaction
   const handleTabChange = (tab: "claude" | "agents" | "docs") => {
-    setActiveTab(tab)
+    // Navigate to the default file for that tab
+    let targetPath = ""
     if (tab === "claude" && tabs.claudeMd) {
-      selectFile(tabs.claudeMd.path, tabs.claudeMd.sha)
+      targetPath = tabs.claudeMd.path
     } else if (tab === "agents" && tabs.agentsMd) {
-      selectFile(tabs.agentsMd.path, tabs.agentsMd.sha)
+      targetPath = tabs.agentsMd.path
+    } else if (tab === "docs") {
+       // Try to find llmdoc/index.md or first file
+       const indexMd = tabs.docsTree.find(n => n.path.toLowerCase() === "llmdoc/index.md")
+       if (indexMd) targetPath = indexMd.path
+       else if (tabs.docsTree.length > 0) targetPath = tabs.docsTree[0].path
+    }
+
+    if (targetPath) {
+      navigate({ to: `/${owner}/${repo}/${targetPath}` })
+    } else {
+      // If empty tab, just set state (visual only)
+      setActiveTab(tab)
     }
   }
+  
+  const onFileSelect = (path: string) => {
+      navigate({ to: `/${owner}/${repo}/${path}` })
+  }
+
 
   // 复制链接
   const copyLink = () => {
@@ -79,12 +162,8 @@ function RepoViewer() {
     return <EmptyState type="no-docs" />
   }
 
-  // 确定默认标签
-  const defaultTab = tabs.claudeMd ? "claude" : tabs.agentsMd ? "agents" : "docs"
-  const currentTab = activeTab || defaultTab
-
-  // 获取当前文件名
-  const currentFileName = selectedFile?.split("/").pop() || ""
+  // Get current file name from splat or state
+  const currentFileName = selectedFile?.split("/").pop() || _splat?.split("/").pop() || ""
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col gap-4 animate-fade-in">
@@ -122,9 +201,18 @@ function RepoViewer() {
           {/* 标签切换 */}
           <div className="p-2 border-b bg-muted/30">
             <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+               {/* Reorder tabs: Docs (LLMDoc) first */}
+              {tree.length > 0 && (
+                <TabButton
+                  active={activeTab === "docs"}
+                  onClick={() => handleTabChange("docs")}
+                  icon={<FolderOpen className="h-3.5 w-3.5" />}
+                  label="llmdoc/"
+                />
+              )}
               {tabs.claudeMd && (
                 <TabButton
-                  active={currentTab === "claude"}
+                  active={activeTab === "claude"}
                   onClick={() => handleTabChange("claude")}
                   icon={<FileText className="h-3.5 w-3.5" />}
                   label="claude.md"
@@ -132,43 +220,35 @@ function RepoViewer() {
               )}
               {tabs.agentsMd && (
                 <TabButton
-                  active={currentTab === "agents"}
+                  active={activeTab === "agents"}
                   onClick={() => handleTabChange("agents")}
                   icon={<FileText className="h-3.5 w-3.5" />}
                   label="agents.md"
-                />
-              )}
-              {tree.length > 0 && (
-                <TabButton
-                  active={currentTab === "docs"}
-                  onClick={() => handleTabChange("docs")}
-                  icon={<FolderOpen className="h-3.5 w-3.5" />}
-                  label="llmdoc/"
                 />
               )}
             </div>
           </div>
 
           {/* 文件树 */}
-          {currentTab === "docs" && tree.length > 0 && (
+          {activeTab === "docs" && tree.length > 0 && (
             <ScrollArea className="flex-1">
               <div className="p-3">
                 <FileTree
                   nodes={tree}
                   selectedPath={selectedFile}
-                  onSelect={selectFile}
+                  onSelect={onFileSelect}
                 />
               </div>
             </ScrollArea>
           )}
 
           {/* claude.md / agents.md 不需要文件树 */}
-          {(currentTab === "claude" || currentTab === "agents") && (
+          {(activeTab === "claude" || activeTab === "agents") && (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="text-center text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-3 opacity-10" />
                 <p className="text-xs font-medium uppercase tracking-wider opacity-50">
-                  {currentTab === "claude" ? "claude.md" : "agents.md"}
+                  {activeTab === "claude" ? "claude.md" : "agents.md"}
                 </p>
               </div>
             </div>
