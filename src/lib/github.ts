@@ -146,7 +146,12 @@ export async function fetchFileContent(
 
   const data = await response.json()
 
-  // GitHub API 返回 base64 编码的内容
-  const content = atob(data.content)
+  // GitHub API 返回 base64 编码的内容，需要正确处理 UTF-8
+  const binaryString = atob(data.content)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  const content = new TextDecoder("utf-8").decode(bytes)
   return content
 }
