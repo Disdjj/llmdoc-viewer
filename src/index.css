@@ -2,10 +2,11 @@
 
 /* shadcn/ui 主题配置 - Tailwind v4 */
 @theme {
-  /* 圆角 */
+  /* 圆角 - 稍微增加圆润度 */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   /* 自定义颜色 */
   --color-background: hsl(var(--background));
@@ -31,6 +32,8 @@
   /* 动画 */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
 
   @keyframes accordion-down {
     from { height: 0; }
@@ -41,52 +44,62 @@
     from { height: var(--radix-accordion-content-height); }
     to { height: 0; }
   }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
 }
 
-/* CSS 变量定义 */
+/* CSS 变量定义 - Zinc + Violet */
 :root {
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 240 10% 3.9%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 240 10% 3.9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 262.1 83.3% 57.8%; /* Violet 600 */
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
-  --radius: 0.5rem;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 262.1 83.3% 57.8%;
+  --radius: 0.75rem; /* More rounded */
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 263.4 70% 50.4%; /* Violet 500 */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 263.4 70% 50.4%;
 }
 
 /* 基础样式 */
@@ -97,6 +110,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 /* Highlight.js GitHub style */
@@ -169,6 +183,7 @@ body {
   border-radius: var(--radius-lg);
   overflow-x: auto;
   padding: 1rem;
+  background-color: var(--color-secondary); /* Slightly different bg for code blocks */
 }
 
 .prose code {
@@ -178,9 +193,10 @@ body {
 .prose :not(pre) > code {
   background-color: var(--color-muted);
   padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
-  font-family: ui-monospace, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: var(--color-primary); /* Colored inline code */
 }
 
 .prose table {
@@ -207,6 +223,7 @@ body {
 .prose a {
   color: var(--color-primary);
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .prose a:hover {
@@ -219,42 +236,47 @@ body {
 .prose h4,
 .prose h5,
 .prose h6 {
-  font-weight: 600;
-  margin-top: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
   margin-bottom: 1rem;
+  letter-spacing: -0.025em; /* Tighter heading spacing */
 }
 
 .prose h1 {
-  font-size: 1.875rem;
+  font-size: 2.25rem;
 }
 
 .prose h2 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 0.5rem;
 }
 
 .prose h3 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .prose p {
-  margin: 1rem 0;
+  margin: 1.25rem 0;
+  line-height: 1.75;
 }
 
 .prose ul,
 .prose ol {
-  margin: 1rem 0;
+  margin: 1.25rem 0;
   padding-left: 1.5rem;
 }
 
 .prose li {
-  margin: 0.25rem 0;
+  margin: 0.5rem 0;
 }
 
 .prose blockquote {
-  border-left: 4px solid var(--color-muted);
+  border-left: 4px solid var(--color-primary); /* Brand color accent */
   padding-left: 1rem;
   font-style: italic;
   color: var(--color-muted-foreground);
+  background: var(--color-secondary); /* Subtle background for quotes */
+  padding: 1rem;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
