@@ -90,6 +90,21 @@ export function filterLLMDocs(tree: GitNode[]): {
   return { claudeMd, agentsMd, docsTree }
 }
 
+// llmdoc 文件夹排序优先级（从简单到困难，像文档系统一样）
+const FOLDER_PRIORITY: Record<string, number> = {
+  "overview": 1,      // 概述
+  "architecture": 2,  // 架构文档
+  "guides": 3,        // 开发指南
+  "features": 4,      // 功能文档
+  "modules": 5,       // 模块文档
+  "conventions": 6,   // 开发规范
+  "sop": 7,           // 标准操作流程
+}
+
+function getFolderPriority(name: string): number {
+  return FOLDER_PRIORITY[name.toLowerCase()] ?? 99
+}
+
 export function buildTreeStructure(nodes: GitNode[]): TreeNode[] {
   const root: TreeNode[] = []
   const map = new Map<string, TreeNode>()
@@ -127,27 +142,42 @@ export function buildTreeStructure(nodes: GitNode[]): TreeNode[] {
   }
 
   // Helper to sort nodes recursively
-  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+  const sortNodes = (nodes: TreeNode[], isRoot: boolean = false): TreeNode[] => {
     return nodes.sort((a, b) => {
+      // index.md 永远排第一
       if (a.name.toLowerCase() === "index.md") return -1
       if (b.name.toLowerCase() === "index.md") return 1
-      
-      // Folders first? Let's keep files and folders mixed or folders first.
-      // Standard: Folders first, then files.
+
+      // overview 相关文件排在前面
+      const aIsOverview = a.name.toLowerCase().includes("overview")
+      const bIsOverview = b.name.toLowerCase().includes("overview")
+      if (aIsOverview && !bIsOverview) return -1
+      if (!aIsOverview && bIsOverview) return 1
+
+      // 文件夹和文件分组：文件先，文件夹后（因为 index.md 在文件中）
       if (a.type !== b.type) {
-          return a.type === "folder" ? -1 : 1
+        return a.type === "file" ? -1 : 1
       }
-      
+
+      // 根级别的文件夹按优先级排序
+      if (isRoot && a.type === "folder" && b.type === "folder") {
+        const priorityA = getFolderPriority(a.name)
+        const priorityB = getFolderPriority(b.name)
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB
+        }
+      }
+
       return a.name.localeCompare(b.name)
     }).map(node => {
       if (node.children) {
-        node.children = sortNodes(node.children)
+        node.children = sortNodes(node.children, false)
       }
       return node
     })
   }
 
-  return sortNodes(root)
+  return sortNodes(root, true)
 }
 
 export async function fetchFileContent(

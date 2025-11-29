@@ -30,14 +30,18 @@ interface FileTreeNodeProps {
   level: number
 }
 
+// 移除 .md 后缀，像文档系统那样展示
+function getDisplayName(name: string, isFolder: boolean): string {
+  if (isFolder) return name
+  // 移除 .md 后缀
+  return name.replace(/\.md$/i, "")
+}
+
 function FileTreeNode({ node, selectedPath, onSelect, level }: FileTreeNodeProps) {
   const isFolder = node.type === "folder"
   const isSelected = selectedPath === node.path
-  
-  // Use the file name as display name, stripping extension for cleaner look?
-  // User didn't ask, but "Documentation system" usually has clean names.
-  // Let's keep extension for now to be safe, or user might get confused.
-  const displayName = node.name
+
+  const displayName = getDisplayName(node.name, isFolder)
 
   if (isFolder) {
     return (
